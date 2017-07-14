@@ -28,7 +28,7 @@ The server code:
                 rawmsg = client.read()
                 client.write(b'hallo')    
         pserver.waitfordata()
-    pserver.shutdown()
+    pserver.close()
 
 The client code:
 
