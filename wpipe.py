@@ -103,7 +103,7 @@ class Base:
             written = b'\x00\x00\x00\x00'
 
             ret = hk32['WriteFile'](
-                ctypes_handle(nph), ctypes.c_char_p(rawmsg), 
+                ctypes_handle(nph), ctypes.c_char_p(bytes(rawmsg, 'utf-8')), 
                 ctypes.c_uint(len(rawmsg)), 
                 ctypes.c_char_p(written),
                 ctypes.c_uint(0)
@@ -219,10 +219,12 @@ class Client(Base):
 
         if not Mode.is_writer(self.mode):
             thread = threading.Thread(target = self.readerentry, args = (self.handle, self.client, self.mode, None))
+            thread.setDaemon(True)
             thread.start()
 
         if not Mode.is_reader(self.mode):
             thread = threading.Thread(target = self.writerentry, args = (self.handle, self.client, self.mode))
+            thread.setDaemon(True)
             thread.start()
 
         self.alive = True
@@ -252,6 +254,7 @@ class Server(Base):
         self.maxtime = maxtime
         self.shutdown = False
         self.t = threading.Thread(target = self.serverentry)
+        self.t.setDaemon(True)
         self.t.start()
         self.hasdata = False
 
@@ -264,7 +267,7 @@ class Server(Base):
             client.close()
             self.clients.remove(client)
 
-    def getclientcount():
+    def getclientcount(self):
         self.dropdeadclients()
         return len(self.clients)
 
@@ -278,7 +281,7 @@ class Server(Base):
     def __index__(self, index):
         return self.clients[index]
 
-    def shutdown(self):
+    def close(self):
         self.shutdown = True
 
     def waitfordata(self, timeout = None, interval = 0.01):
@@ -330,10 +333,12 @@ class Server(Base):
 
             if self.mode != Mode.Writer:
                 thread = threading.Thread(target = self.readerentry, args = (nph, client, self.mode, self))
+                thread.setDaemon(True)
                 thread.start()
 
             if self.mode != Mode.Reader:
                 thread = threading.Thread(target = self.writerentry, args = (nph, client, self.mode))
+                thread.setDaemon(True)
                 thread.start()
 
             self.clients.append(client)
